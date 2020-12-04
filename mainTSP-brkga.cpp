@@ -84,10 +84,12 @@ FEvaluator<ESolutionTSP, MinOrMax::MINIMIZE>
 pair<Evaluation<double>, vector<int>>
 fDecode(const vector<double>& rk)
 {
+   //std::cout << "fDecode: INPUT = " << rk << std::endl;
    vector<pair<double, int>> v(rk.size());
-   int k = 0;
    for (unsigned i = 0; i < v.size(); i++)
-      v[k] = pair<double, int>(rk[i], i);
+      v[i] = pair<double, int>(rk[i], i);
+
+   //std::cout << "fDecode: will sort = " << v << std::endl;
 
    sort(v.begin(), v.end(), [](const pair<double, int>& i, const pair<double, int>& j) -> bool {
       return i.first < j.first;
@@ -98,6 +100,7 @@ fDecode(const vector<double>& rk)
    for (unsigned i = 0; i < v.size(); i++)
       p[i] = v[i].second;
 
+   //std::cout << "fDecode: OUTPUT = " << p << std::endl;
    Evaluation<double> e = ev.evaluate(p);
    return make_pair(e, p);
 }
@@ -135,15 +138,22 @@ public:
    {
       Population<RSK, Evaluation<double>> pop;
 
-      for (unsigned i = 0; i < populationSize; i++) 
-      {
+      for (unsigned i = 0; i < populationSize; i++) {
          vector<double>* d = new vector<double>(sz);
          for (int j = 0; j < sz; j++)
-            d->at(j) = ( rand() % static_cast<int>(prc) ) / static_cast<int>(prc);
+            d->at(j) = (rand() % static_cast<int>(prc)) / prc;
          pop.push_back(d);
+         if(Component::debug)
+            (*Component::logdata) << "MyRandomKeysInitPop::generatePopulation new: " << *d << std::endl;
       }
 
       return pop;
+   }
+
+   virtual bool setVerboseR() override
+   {
+      this->setVerbose();
+      return InitialPopulation<std::vector<double>, Evaluation<double>>::setVerboseR();
    }
 };
 
@@ -153,30 +163,68 @@ main()
    long seed = 12345678; // setting initial random seed
 
    // load data into problem context 'pTSP'
-   Scanner scanner{ File {"berlin52.tsp"} };
-   
+   Scanner scanner{ File{ "berlin52.tsp" } };
+
    pTSP.load(scanner);
    std::cout << "file loaded" << std::endl;
 
-   for (int i = 32; i > 1; i--){ // loop to test brkga seed boundaries
+   std::cout << "pTSP.n = " << pTSP.n << std::endl;
 
-      ::srand(seed + i*i); // pseudo randomizes sytem random
+   InitialPopulation<vector<double>, ESolutionTSP::second_type>* initPop =
+     new MyRandomKeysInitPop(pTSP.n, 1000); // passing key_size
+
+   // Parameters BRKGA
+   // (C1): Evaluator<S, XEv>& _evaluator, int key_size, unsigned numGen, unsigned _popSize, double fracTOP, double fracBOT, double _probElitism) :
+
+   //eprk, pTSP.n, 1000, 30, 0.4, 0.3, 0.6
+   BRKGA<ESolutionTSP, double> brkga(
+     decoder,
+     *initPop,
+     pTSP.n, // key_size
+     50000, // generations
+     200, // pop size
+     0.4,
+     0.3,
+     0.6);
+   //
+   //std::cout << "set verbose -> " << brkga.setVerboseR() << std::endl;
+   std::cout << "debug=" << brkga.debug << std::endl;
+
+   SearchStatus status = brkga.search(StopCriteria<ESolutionTSP::second_type>{ 30.0 }); // 10.0 seconds max
+   ESolutionTSP best = *brkga.getBestSolution();
+   best.second.print();
+
+   return 1;
+
+   for (int i = 32; i > 1; i--) { // loop to test brkga seed boundaries
+
+      ::srand(seed + i * i); // pseudo randomizes sytem random
+
+      std::cout << "pTSP.n = " << pTSP.n << std::endl;
 
       InitialPopulation<vector<double>, ESolutionTSP::second_type>* initPop =
-      new MyRandomKeysInitPop(pTSP.n, pow(2, i)); // passing key_size
+        new MyRandomKeysInitPop(pTSP.n, pow(2, i)); // passing key_size
 
       // Parameters BRKGA
       // (C1): Evaluator<S, XEv>& _evaluator, int key_size, unsigned numGen, unsigned _popSize, double fracTOP, double fracBOT, double _probElitism) :
 
       //eprk, pTSP.n, 1000, 30, 0.4, 0.3, 0.6
-      BRKGA<ESolutionTSP::first_type, ESolutionTSP::second_type, double, ESolutionTSP> brkga(
-      decoder,
-      *initPop,
-      1000,
-      30,
-      0.4,
-      0.3,
-      0.6);
+      BRKGA<ESolutionTSP, double> brkga(
+        decoder,
+        *initPop,
+        pTSP.n, // key_size
+        1000,
+        30,
+        0.4,
+        0.3,
+        0.6);
+      //
+      std::cout << "set verbose -> " << brkga.setVerboseR() << std::endl;
+      std::cout << "debug=" << brkga.debug << std::endl;
+
+      SearchStatus status = brkga.search(StopCriteria<ESolutionTSP::second_type>{ 10.0 }); // 10.0 seconds max
+      ESolutionTSP best = *brkga.getBestSolution();
+      best.second.print();
 
       //delete MyRandomKeysInitPop(pTSP.n, pow(2, i)); // killing sample size to avoid memory loss
       // unable to do the thing above because it is not a pointer
