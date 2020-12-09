@@ -85,9 +85,9 @@ pair<Evaluation<double>, vector<int>>
 fDecode(const vector<double>& rk)
 {
    vector<pair<double, int>> v(rk.size());
-   int k = 0;
+   //int k = 0;
    for (unsigned i = 0; i < v.size(); i++)
-      v[k] = pair<double, int>(rk[i], i);
+      v[i] = pair<double, int>(rk[i], i);
 
    sort(v.begin(), v.end(), [](const pair<double, int>& i, const pair<double, int>& j) -> bool {
       return i.first < j.first;
