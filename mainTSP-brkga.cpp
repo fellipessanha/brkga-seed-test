@@ -116,6 +116,46 @@ using namespace optframe;
 using namespace scannerpp;
 using namespace TSP_brkga;
 
+class MyRandomKeysInitPop : public InitialPopulation<std::pair<std::vector<double>, Evaluation<double>>>
+{
+   using XES2 = typename std::pair<std::vector<double>, Evaluation<double>>;
+   using RSK = typename XES2::first_type;
+   
+
+private:
+   int sz;
+   double prc;
+
+public:
+   MyRandomKeysInitPop(int size, double precision)
+     : sz{ size }
+     , prc{ precision }
+   {
+   }
+
+   Population<XES2> generatePopulation(unsigned populationSize, double timelimit) override
+   {
+      Population<XES2> pop;
+
+      for (unsigned i = 0; i < populationSize; i++) {
+         vector<double>* d = new vector<double>(sz);
+         for (int j = 0; j < sz; j++)
+            d->at(j) = (rand() % static_cast<int>(prc)) / prc;
+         pop.push_back(d);
+         if (Component::debug)
+            (*Component::logdata) << "MyRandomKeysInitPop::generatePopulation new: " << *d << std::endl;
+      }
+
+      return pop;
+   }
+
+   virtual bool setVerboseR() override
+   {
+      this->setVerbose();
+      return InitialPopulation<XES2>::setVerboseR();
+   }
+};
+/*
 class MyRandomKeysInitPop : public InitialPopulation< std::pair<std::vector<double>, Evaluation<double> >>
 {
    using XES2 = typename std::pair<std::vector<double>, Evaluation<double>>;
@@ -139,7 +179,7 @@ public:
       for (unsigned i = 0; i < populationSize; i++) {
          vector<double>* d = new vector<double>(sz);
          for (int j = 0; j < sz; j++)
-            d->at(j) = ( rand() % static_cast<int>(prc) ) / prc;
+            d->at(j) = ( rand() % static_cast<int>(prc) ) / (prc);
          pop.push_back(d);
          
          if (Component::debug)
@@ -153,22 +193,27 @@ public:
       return InitialPopulation<XES2>::setVerboseR();
    }
 };
-
+*/
 int
 main()
 {
-   srand(0); // using system random (weak... just an example!)
+   int seed= 1000012345;
 
    // load data into problem context 'pTSP'
    Scanner scanner{ File{ "berlin52.tsp" } };
+
+   
    pTSP.load(scanner);
    std::cout << "loaded " << pTSP.n << " different cities" << std::endl;
+
+   std::cout << pTSP.dist << "\n";
 
    using RKInd = pair<vector<double>, ESolutionTSP::second_type>;
    using MyPopType = Population<RKInd>;
 
    for (int i = 32; i>= 0; i--)
-   {  std::cout << "using up to 2^" << i << " different keys" << "\n"; 
+   {  
+      ::srand( seed + i*i );
       InitialPopulation<RKInd>* initPop =
       new MyRandomKeysInitPop(pTSP.n, i); // passing key_size
 
@@ -186,9 +231,15 @@ main()
       0.3,
       0.6);
 
-      SearchStatus status = brkga.search({ 10.0});//, 9000.0 }); // 10.0 seconds max
+      std::cout << "using up to 2^" << i << " different keys" << "\n"; 
+      std::cout << "set verbose -> " << brkga.setVerboseR() << std::endl;
+      std::cout << "debug=" << brkga.debug << std::endl;
 
+      SearchStatus status = brkga.search(15.0); // 10.0 seconds max
+      ESolutionTSP best = *brkga.getBestSolution();
+      best.second.print();
 
+      
       brkga.onBest = [](auto& self) 
       {
          cout << "RKGA: updated decoded solution -> " << self.best->first << std::endl;
@@ -196,12 +247,8 @@ main()
          return self.best->second.evaluation() > 9500.0;
       };
 
-      //std::cout << "set verbose -> " << brkga.setVerboseR() << std::endl;
-      //std::cout << "debug=" << brkga.debug << std::endl;
-
-
       delete initPop; // no memory leaks like a true programmer
-
+      std::cout << "/n";
 
    }
    std::cout << "FINISHED" << std::endl;
