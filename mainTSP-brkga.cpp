@@ -155,45 +155,7 @@ public:
       return InitialPopulation<XES2>::setVerboseR();
    }
 };
-/*
-class MyRandomKeysInitPop : public InitialPopulation< std::pair<std::vector<double>, Evaluation<double> >>
-{
-   using XES2 = typename std::pair<std::vector<double>, Evaluation<double>>;
-   using RSK = std::vector<double>;
 
-private:
-   int sz;
-   double prc;
-
-public:
-   MyRandomKeysInitPop(int size, double precision)
-     : sz{ size }
-     , prc{ precision }
-   {
-   }
-
-   Population<XES2> generatePopulation(unsigned populationSize, double timelimit) override
-   {
-      Population<XES2> pop;
-
-      for (unsigned i = 0; i < populationSize; i++) {
-         vector<double>* d = new vector<double>(sz);
-         for (int j = 0; j < sz; j++)
-            d->at(j) = ( rand() % static_cast<int>(prc) ) / (prc);
-         pop.push_back(d);
-         
-         if (Component::debug)
-            (*Component::logdata) << "MyRandomKeysInitPop::generatePopulation new: " << *d << std::endl;
-      }
-      return pop;
-   }
-   virtual bool setVerboseR() override
-   {
-      this->setVerbose();
-      return InitialPopulation<XES2>::setVerboseR();
-   }
-};
-*/
 int
 main()
 {
@@ -248,7 +210,7 @@ main()
       };
 
       delete initPop; // no memory leaks like a true programmer
-      std::cout << "/n";
+      std::cout << "\n";
 
    }
    std::cout << "FINISHED" << std::endl;
