@@ -111,8 +111,9 @@ main()
    myRandGen.setSeed(seed);
    int nParam = 1; // param size
 
-   vector<double> cI(nParam, -100.0);
-   vector<double> cS(nParam, 100.0);
+   //quotas for I0, U0, tau, f
+   vector<double> cI = {1, 1, 0, 0};
+   vector<double> cS = {100, 100, 0.1, 1.0};
 
    PSO<> myPSO{
       evPSO,
