@@ -20,7 +20,7 @@ using namespace optframe;
 // this also works when defining in global scope (same as 'class')
 namespace example_pso {
 
-class ProblemContext
+class ProblemContext // 100% copiado do brkga
 {
 public:
    int n; //number of days
@@ -40,11 +40,10 @@ void load(Scanner& scanner)
       acu += *scanner.nextInt(); // does cumulated sum of cases
       dadosreais[i] = *scanner.nextDouble(); 
    }
-} //load
-   
+} //load  
 }; //class
 
-ProblemContext pPSO;
+ProblemContext pPSO; // onde eu guardo as variaveis todas
 
 using ESolutionPSO = std::pair<
   std::vector<double>, // first part of search space element: solution (representation)
@@ -80,15 +79,7 @@ fevaluatePSO(const std::vector<double>& s)
    }
    return Evaluation<double>{ fit/pPSO.n };
 }
-   /*
-   double f = 0;
-   // TODO: calcular erros em relação a solução corrente 's'
-   // (x-10)^2
-   f = (s[0] - 10) * (s[0] - 10);
-   return Evaluation<double>{ f };
-   
-}*/
-
+  
 // Evaluate
 FEvaluator<ESolutionPSO, MinOrMax::MINIMIZE> evPSO{
    fevaluatePSO
